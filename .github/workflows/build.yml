@@ -1,0 +1,53 @@
+name: Build deb
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build dylib
+        run: |
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          clang -arch arm64 \
+                -isysroot "$SDK" \
+                -dynamiclib -fobjc-arc \
+                -Wno-deprecated-declarations \
+                -install_name @executable_path/Frameworks/FullScreenBackTweak.dylib \
+                -framework UIKit \
+                -framework Foundation \
+                -framework AVFoundation \
+                -o FullScreenBackTweak.dylib \
+                FullScreenBackTweak.x
+          ls -la FullScreenBackTweak.dylib
+      - name: Package deb
+        run: |
+          mkdir -p deb/DEBIAN
+          mkdir -p deb/Library/MobileSubstrate/DynamicLibraries
+          
+          cat > deb/DEBIAN/control << 'EOF'
+          Package: com.fullscreenback.tweak
+          Name: FullScreenBackTweak
+          Version: 1.0.0
+          Architecture: iphoneos-arm64
+          Description: 全屏返回手势tweak
+          Maintainer: custom
+          Author: custom
+          Section: Tweaks
+          Depends: firmware (>= 15.0)
+          Priority: optional
+EOF
+          
+          cp FullScreenBackTweak.dylib deb/Library/MobileSubstrate/DynamicLibraries/
+          cp FullScreenBackTweak.plist deb/Library/MobileSubstrate/DynamicLibraries/
+          
+          dpkg-deb --build --root-owner-group deb FullScreenBackTweak.deb
+          ls -la FullScreenBackTweak.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FullScreenBackTweak.deb
+          path: FullScreenBackTweak.deb
