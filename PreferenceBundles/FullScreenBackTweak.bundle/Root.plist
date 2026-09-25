@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>title</key>
+			<string>全屏返回</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>fbs_enabled</string>
+			<key>label</key>
+			<string>启用全屏返回</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>key</key>
+			<string>fbs_haptic</string>
+			<key>label</key>
+			<string>确认返回时震动</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>title</key>
+			<string>震动强度</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSValueCell</string>
+			<key>default</key>
+			<real>0.8</real>
+			<key>key</key>
+			<string>fbs_strength</string>
+			<key>label</key>
+			<string>强度(25%/50%/75%/100%)</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>全屏返回</string>
+</dict>
+</plist>
