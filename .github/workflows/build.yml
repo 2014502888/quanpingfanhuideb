@@ -24,27 +24,19 @@ jobs:
                 -o FullScreenBackTweak.dylib \
                 FullScreenBackTweak.x
           ls -la FullScreenBackTweak.dylib
-      - name: Package deb manually
+      - name: Install dpkg
+        run: brew install dpkg
+      - name: Package deb
         run: |
-          # 创建目录结构
-          mkdir -p pkg/DEBIAN
-          mkdir -p pkg/Library/MobileSubstrate/DynamicLibraries
+          mkdir -p deb/DEBIAN
+          mkdir -p deb/Library/MobileSubstrate/DynamicLibraries
           
-          # control文件
-          printf "Package: com.fullscreenback.tweak\nName: FullScreenBackTweak\nVersion: 1.0.0\nArchitecture: iphoneos-arm64\nDescription: Full Screen Back Tweak\nMaintainer: custom\nAuthor: custom\nSection: Tweaks\nDepends: firmware (>= 15.0)\nPriority: optional\n" > pkg/DEBIAN/control
+          printf "Package: com.fullscreenback.tweak\nName: FullScreenBackTweak\nVersion: 1.0.0\nArchitecture: iphoneos-arm64\nDescription: Full Screen Back Tweak\nMaintainer: custom\nAuthor: custom\nSection: Tweaks\nDepends: firmware (>= 15.0)\nPriority: optional\n" > deb/DEBIAN/control
           
-          # 复制文件
-          cp FullScreenBackTweak.dylib pkg/Library/MobileSubstrate/DynamicLibraries/
-          cp FullScreenBackTweak.plist pkg/Library/MobileSubstrate/DynamicLibraries/
+          cp FullScreenBackTweak.dylib deb/Library/MobileSubstrate/DynamicLibraries/
+          cp FullScreenBackTweak.plist deb/Library/MobileSubstrate/DynamicLibraries/
           
-          # 打包
-          cd pkg
-          tar czf control.tar.gz DEBIAN
-          tar czf data.tar.gz Library
-          echo "2.0" > debian-binary
-          ar r FullScreenBackTweak.deb debian-binary control.tar.gz data.tar.gz
-          mv FullScreenBackTweak.deb ../
-          cd ..
+          dpkg-deb --build --root-owner-group deb FullScreenBackTweak.deb
           ls -la FullScreenBackTweak.deb
       - uses: actions/upload-artifact@v4
         with:
