@@ -24,8 +24,20 @@ jobs:
                 -o FullScreenBackTweak.dylib \
                 FullScreenBackTweak.x
           ls -la FullScreenBackTweak.dylib
-      - name: Install dpkg
-        run: brew install dpkg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dylib
+          path: |
+            FullScreenBackTweak.dylib
+            FullScreenBackTweak.plist
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dylib
       - name: Package deb
         run: |
           mkdir -p deb/DEBIAN
