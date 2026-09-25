@@ -22,7 +22,7 @@ jobs:
                 -framework Foundation \
                 -framework AVFoundation \
                 -o FullScreenBackTweak.dylib \
-                FullScreenBackTweak.x
+                FullScreenBackTweak.m
           ls -la FullScreenBackTweak.dylib
       - uses: actions/upload-artifact@v4
         with:
