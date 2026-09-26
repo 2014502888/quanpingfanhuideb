@@ -108,20 +108,28 @@ static void FBSInstallOnNav(UINavigationController *nav) {
             if ([g isMemberOfClass:[FBSPanGesture class]]) return;
         }
         
-        // 从interactivePopGestureRecognizer拿target
+        // 方式1: 从interactivePopGestureRecognizer拿target
         UIGestureRecognizer *sys = nav.interactivePopGestureRecognizer;
         NSArray *targets = [sys valueForKey:@"_targets"];
         id wrapper = targets.firstObject;
-        if (!wrapper) return;
         id target = [wrapper valueForKey:@"_target"];
-        if (!target) return;
         
-        FBSPanGesture *gesture = [[FBSPanGesture alloc] initWithTarget:target
-                                                               action:NSSelectorFromString(@"handleNavigationTransition:")];
-        gesture.delegate = [FBSDelegate shared];
-        gesture.maximumNumberOfTouches = 1;
-        [gesture addTarget:[FBSHaptic shared] action:@selector(track:)];
-        [nav.view addGestureRecognizer:gesture];
+        if (target) {
+            // 用系统的target
+            FBSPanGesture *gesture = [[FBSPanGesture alloc] initWithTarget:target
+                                                                   action:NSSelectorFromString(@"handleNavigationTransition:")];
+            gesture.delegate = [FBSDelegate shared];
+            gesture.maximumNumberOfTouches = 1;
+            [gesture addTarget:[FBSHaptic shared] action:@selector(track:)];
+            [nav.view addGestureRecognizer:gesture];
+        } else {
+            // 方式2: 拿不到target,用自己的处理
+            FBSPanGesture *gesture = [[FBSPanGesture alloc] init];
+            gesture.delegate = [FBSDelegate shared];
+            gesture.maximumNumberOfTouches = 1;
+            [gesture addTarget:[FBSHaptic shared] action:@selector(track:)];
+            [nav.view addGestureRecognizer:gesture];
+        }
     } @catch (NSException *e) {}
 }
 
