@@ -121,20 +121,63 @@ static void FBSInstallOnNav(UINavigationController *nav) {
     } @catch (NSException *e) {}
 }
 
-static void FBSWalk(UIViewController *vc) {
-    if (!vc) return;
-    if ([vc isKindOfClass:[UINavigationController class]]) {
-        FBSInstallOnNav((id)vc);
+// ==================== Hook push方法 ====================
+static void FBSHookPush(void) {
+    Class navCls = [UINavigationController class];
+    Method m = class_getInstanceMethod(navCls, @selector(pushViewController:animated:));
+    if (m) {
+        __block IMP orig = method_getImplementation(m);
+        method_setImplementation(m, imp_implementationWithBlock(^(id self, UIViewController *vc, BOOL animated) {
+            ((void(*)(id, SEL, id, BOOL))orig)(self, @selector(pushViewController:animated:), vc, animated);
+            FBSInstallOnNav(self);
+        }));
     }
-    for (UIViewController *c in vc.childViewControllers) FBSWalk(c);
+}
+
+// ==================== Hook viewDidAppear ====================
+static void FBSHookViewDidAppear(void) {
+    Class vcCls = [UIViewController class];
+    Method m = class_getInstanceMethod(vcCls, @selector(viewDidAppear:));
+    if (m) {
+        __block IMP orig = method_getImplementation(m);
+        method_setImplementation(m, imp_implementationWithBlock(^(id self, BOOL animated) {
+            ((void(*)(id, SEL, BOOL))orig)(self, @selector(viewDidAppear:), animated);
+            @try {
+                UIViewController *vc = (id)self;
+                if (vc.navigationController) {
+                    FBSInstallOnNav(vc.navigationController);
+                }
+            } @catch (__unused NSException *e) {}
+        }));
+    }
 }
 
 static void FBSInstall(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
+        FBSHookPush();
+        FBSHookViewDidAppear();
         for (UIWindowScene *s in [UIApplication sharedApplication].connectedScenes) {
             if (![s isKindOfClass:[UIWindowScene class]]) continue;
             for (UIWindow *w in s.windows) {
-                if (w.rootViewController) FBSWalk(w.rootViewController);
+                if (w.rootViewController) {
+                    // 遍历所有VC
+                    UIViewController *root = w.rootViewController;
+                    if ([root isKindOfClass:[UINavigationController class]]) {
+                        FBSInstallOnNav((id)root);
+                    }
+                    // 递归找所有nav
+                    NSMutableArray *queue = [NSMutableArray arrayWithObject:root];
+                    while (queue.count > 0) {
+                        UIViewController *vc = queue.firstObject;
+                        [queue removeObjectAtIndex:0];
+                        if ([vc isKindOfClass:[UINavigationController class]]) {
+                            FBSInstallOnNav((id)vc);
+                        }
+                        for (UIViewController *c in vc.childViewControllers) {
+                            [queue addObject:c];
+                        }
+                    }
+                }
             }
         }
     });
