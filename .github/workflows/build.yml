@@ -44,13 +44,16 @@ jobs:
         run: |
           mkdir -p deb/DEBIAN
           mkdir -p deb/var/jb/Library/MobileSubstrate/DynamicLibraries
+          mkdir -p deb/var/jb/Library/Tweaks
           mkdir -p deb/var/jb/Library/PreferenceBundles
           
-          printf "Package: com.fullscreenback.tweak\nName: FullScreenBackTweak\nVersion: 1.0.0\nArchitecture: iphoneos-arm64\nDescription: Full Screen Back Tweak\nMaintainer: custom\nAuthor: custom\nSection: Tweaks\nDepends: firmware (>= 15.0), preferenceloader\nPriority: optional\n" > deb/DEBIAN/control
+          printf "Package: com.fullscreenback.tweak\nName: FullScreenBackTweak\nVersion: 1.0.0\nArchitecture: iphoneos-arm64\nDescription: Full Screen Back Tweak\nMaintainer: custom\nAuthor: custom\nSection: Tweaks\nDepends: firmware (>= 15.0)\nPriority: optional\n" > deb/DEBIAN/control
           
+          # 同时放到两个路径
           cp FullScreenBackTweak.dylib deb/var/jb/Library/MobileSubstrate/DynamicLibraries/
           cp FullScreenBackTweak.plist deb/var/jb/Library/MobileSubstrate/DynamicLibraries/
-          cp FullScreenBackTweak_Prefs.plist deb/var/jb/Library/MobileSubstrate/DynamicLibraries/
+          cp FullScreenBackTweak.dylib deb/var/jb/Library/Tweaks/
+          cp FullScreenBackTweak.plist deb/var/jb/Library/Tweaks/
           cp -r PreferenceBundles/FullScreenBackTweak.bundle deb/var/jb/Library/PreferenceBundles/
           
           dpkg-deb --build --root-owner-group deb FullScreenBackTweak.deb
