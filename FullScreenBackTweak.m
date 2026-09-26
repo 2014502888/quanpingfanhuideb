@@ -103,15 +103,19 @@ static double FBSGetStrength(void){ return [[NSUserDefaults standardUserDefaults
 // ==================== 安装手势 ====================
 static void FBSInstallOnNav(UINavigationController *nav) {
     @try {
+        // 检查有没有装过
         for (UIGestureRecognizer *g in nav.view.gestureRecognizers) {
             if ([g isMemberOfClass:[FBSPanGesture class]]) return;
         }
+        
+        // 从interactivePopGestureRecognizer拿target
         UIGestureRecognizer *sys = nav.interactivePopGestureRecognizer;
         NSArray *targets = [sys valueForKey:@"_targets"];
         id wrapper = targets.firstObject;
         if (!wrapper) return;
         id target = [wrapper valueForKey:@"_target"];
         if (!target) return;
+        
         FBSPanGesture *gesture = [[FBSPanGesture alloc] initWithTarget:target
                                                                action:NSSelectorFromString(@"handleNavigationTransition:")];
         gesture.delegate = [FBSDelegate shared];
@@ -121,15 +125,14 @@ static void FBSInstallOnNav(UINavigationController *nav) {
     } @catch (NSException *e) {}
 }
 
-// ==================== Hook push方法 ====================
-static void FBSHookPush(void) {
-    Class navCls = [UINavigationController class];
-    Method m = class_getInstanceMethod(navCls, @selector(pushViewController:animated:));
+// ==================== Hook指定类的push方法 ====================
+static void FBSHookPushForClass(Class cls) {
+    Method m = class_getInstanceMethod(cls, @selector(pushViewController:animated:));
     if (m) {
         __block IMP orig = method_getImplementation(m);
         method_setImplementation(m, imp_implementationWithBlock(^(id self, UIViewController *vc, BOOL animated) {
             ((void(*)(id, SEL, id, BOOL))orig)(self, @selector(pushViewController:animated:), vc, animated);
-            FBSInstallOnNav(self);
+            FBSInstallOnNav((id)self);
         }));
     }
 }
@@ -154,19 +157,21 @@ static void FBSHookViewDidAppear(void) {
 
 static void FBSInstall(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
-        FBSHookPush();
+        // hook标准UINavigationController
+        FBSHookPushForClass([UINavigationController class]);
+        // hook微信自定义的MMUINavigationController
+        Class mmNavCls = NSClassFromString(@"MMUINavigationController");
+        if (mmNavCls) {
+            FBSHookPushForClass(mmNavCls);
+        }
         FBSHookViewDidAppear();
+        
+        // 遍历所有window装手势
         for (UIWindowScene *s in [UIApplication sharedApplication].connectedScenes) {
             if (![s isKindOfClass:[UIWindowScene class]]) continue;
             for (UIWindow *w in s.windows) {
                 if (w.rootViewController) {
-                    // 遍历所有VC
-                    UIViewController *root = w.rootViewController;
-                    if ([root isKindOfClass:[UINavigationController class]]) {
-                        FBSInstallOnNav((id)root);
-                    }
-                    // 递归找所有nav
-                    NSMutableArray *queue = [NSMutableArray arrayWithObject:root];
+                    NSMutableArray *queue = [NSMutableArray arrayWithObject:w.rootViewController];
                     while (queue.count > 0) {
                         UIViewController *vc = queue.firstObject;
                         [queue removeObjectAtIndex:0];
